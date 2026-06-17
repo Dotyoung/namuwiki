@@ -1104,8 +1104,8 @@ function renderWiki(text, docName) {
   html = resultLines.join('\n');
 
   // 줄바꿈
+  html = html.replace(/<\/li>\n<li>/g, '</li><li>');
   html = html.replace(/\n/g, '<br>');
-
   // 각주 목록
   if (footnotes.length > 0) {
     html += '<div class="footnote-list">';
