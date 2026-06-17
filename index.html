@@ -1082,6 +1082,7 @@ function renderWiki(text, docName) {
   html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
 
   // 순서 목록
+  //저장 해주삼
   html = html.replace(/^\d+\.\s+(.*)$/gim, '<li>$1</li>');
 
   // 표
