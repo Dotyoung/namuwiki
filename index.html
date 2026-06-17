@@ -1078,13 +1078,11 @@ function renderWiki(text, docName) {
   html = html.replace(/^----$/gim, '<hr>');
 
   // 목록
-  html = html.replace(/^(\*\s+.*)$/gim, '<li>$1</li>');
-  html = html.replace(/(<li>.*<<\/li>\n?)+/g, '<ul>$&</ul>');
-  html = html.replace(/<<ul>(\s*<<li>\*\s+)/g, '<ul><li>');
-  html = html.replace(/<<\/li>\s*<<li>\*\s+/g, '</li><li>');
+  html = html.replace(/^\*\s+(.*)$/gim, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
 
   // 순서 목록
-  html = html.replace(/^(\d+\.\s+.*)$/gim, '<li>$1</li>');
+  html = html.replace(/^\d+\.\s+(.*)$/gim, '<li>$1</li>');
 
   // 표
   const lines = html.split('\n');
