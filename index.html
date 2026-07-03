@@ -1116,6 +1116,113 @@ function renderWiki(content, title) {
 
   return content;
 }
+  // 색상
+  html = html.replace(/\[\[색상:([^\]]+)\]\](.*?)\[\[\/색상\]\]/gs, '<span style="color:$1;">$2</span>');
+
+  // 이미지 — 별도 저장소 참조 지원 (새 구조와 구형 호환) + 크기 조정
+  html = html.replace(/\[\[이미지:([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, src, sizeOpt) => {
+    let url = src;
+    // 별도 저장소에 있는 짧은 키인 경우
+    if (!src.startsWith('http') && !src.startsWith('data:') && images[src]) {
+      if (typeof images[src] === 'object' && images[src].data) {
+        url = images[src].data;
+      } else {
+        url = images[src];
+      }
+    }
+
+    // 크기 옵션 파싱
+    let widthStyle = 'max-width:100%';
+    let widthAttr = '';
+    if (sizeOpt) {
+      const opt = sizeOpt.trim();
+      if (opt === 'small') { widthStyle = 'width:200px'; }
+      else if (opt === 'medium') { widthStyle = 'width:400px'; }
+      else if (opt === 'large') { widthStyle = 'width:600px'; }
+      else if (opt === 'full') { widthStyle = 'width:100%'; }
+      else if (opt.startsWith('width:')) {
+        const val = opt.replace('width:', '').trim();
+        widthStyle = `width:${val}`;
+      }
+      else if (/^\d+$/.test(opt)) {
+        widthStyle = `width:${opt}px`;
+      }
+      else if (opt.endsWith('%')) {
+        widthStyle = `width:${opt}`;
+      }
+    }
+
+    return `<img src="${url}" alt="이미지" onerror="this.style.display='none'" style="${widthStyle}; border-radius:8px; margin:10px 0; cursor:pointer;" onclick="showImageModal('${url}')">`;
+  });
+
+  // 내부 링크 [[문서명|표시]] 또는 [[문서명]]
+  html = html.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '<span class="wiki-link" data-doc="$1">$2</span>');
+  html = html.replace(/\[\[([^\]]+)\]\](?!\[)/g, (match, doc) => {
+    if (doc.startsWith('각주:') || doc.startsWith('색상:') || doc.startsWith('이미지:')) return match;
+    const exists = people[doc] ? '' : ' wiki-link-red';
+    return `<span class="wiki-link${exists}" data-doc="${doc}">${doc}</span>`;
+  });
+
+  // 외부 링크
+  html = html.replace(/\[https?:\/\/([^\s]+)\s+([^\]]+)\]/g, '<a href="https://$1" target="_blank" class="wiki-link">$2</a>');
+
+  // 제목
+  html = html.replace(/^===\s*(.*?)\s*===$/gim, '<h3>$1</h3>');
+  html = html.replace(/^==\s*(.*?)\s*==$/gim, '<h2>$1</h2>');
+
+  // 인용
+  html = html.replace(/^&gt;\s*(.*$)/gim, '<blockquote>$1</blockquote>');
+
+  // 서식
+  html = html.replace(/'''(.*?)'''/g, '<strong>$1</strong>');
+  html = html.replace(/''(.*?)''/g, '<em>$1</em>');
+  html = html.replace(/--(.*?)--/g, '<del>$1</del>');
+
+  // 가로선
+  html = html.replace(/^----$/gim, '<hr>');
+
+  // 목록
+  html = html.replace(/^\*\s+(.*)$/gim, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+  // 순서 목록
+  //저장 해주삼
+  html = html.replace(/^\d+\.\s+(.*)$/gim, '<li>$1</li>');
+
+  // 표
+  const lines = html.split('\n');
+  let inTable = false;
+  let tableHtml = '';
+  const resultLines = [];
+  for (const line of lines) {
+    if (line.trim().startsWith('|')) {
+      if (!inTable) { inTable = true; tableHtml = '<table>'; }
+      const cells = line.split('|').filter(c => c.trim() !== '');
+      tableHtml += '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>';
+    } else {
+      if (inTable) { tableHtml += '</table>'; resultLines.push(tableHtml); inTable = false; tableHtml = ''; }
+      resultLines.push(line);
+    }
+  }
+  if (inTable) { tableHtml += '</table>'; resultLines.push(tableHtml); }
+  html = resultLines.join('\n');
+
+  // 줄바꿈
+  //얍!
+  html = html.replace(/<\/li>\n<li>/g, '</li><li>');
+  html = html.replace(/\n/g, '<br>');
+  
+  // 각주 목록
+  if (footnotes.length > 0) {
+    html += '<div class="footnote-list">';
+    footnotes.forEach((note, i) => {
+      html += `<div><strong>[${i+1}]</strong> ${escapeHtml(note)}</div>`;
+    });
+    html += '</div>';
+  }
+
+  return html;
+}
 
 function renderWikiInline(text) {
   let html = escapeHtml(text);
