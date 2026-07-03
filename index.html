@@ -1003,10 +1003,11 @@ function renderWiki(content, title) {
   
   let footnotes = [];
   
-  content = content.replace(/\[\[각주:(.+?)\]\]/g, function(match, noteText) {
-    footnotes.push(noteText); // <- 이 부분을 고쳐야 합니다.
+  // content를 기반으로 html 변수를 생성하고 선언(let)해줍니다.
+  let html = content.replace(/\[\[각주:(.+?)\]\]/g, function(match, noteText) {
+    footnotes.push(noteText);
     let fnNum = footnotes.length;
-    return `<a class="footnote-ref"...`;
+    return `<a class="footnote-ref" data-num="${fnNum}" data-note="${escapeHtml(noteText)}">[${fnNum}]</a>`;
   });
   
   // 색상
