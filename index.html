@@ -924,29 +924,6 @@ function savePerson() {
   renderHistory(name);
   return true;
 }
-
-function parseInline(text) {
-  if (!text) return '';
-  
-  text = text.replace(/'''(.*?)'''/g, '<strong>$1</strong>');
-  text = text.replace(/''(.*?)''/g, '<em>$1</em>');
-  text = text.replace(/--(.*?)--/g, '<del>$1</del>');
-  text = text.replace(/\[\[색상:(#[a-fA-F0-9]{3,6})\]\](.*?)\[\[\/색상\]\]/g, '<span style="color:$1">$2</span>');
-  
-  text = text.replace(/\[\[이미지:(.+?)(?:\|(.+?))?\]\]/g, function(match, url, option) {
-    let style = 'max-width:100%; border-radius:8px;';
-    if (option) {
-      if (option === 'small') style += ' width:200px;';
-      else if (option === 'medium') style += ' width:400px;';
-      else if (option === 'large') style += ' width:600px;';
-      else if (option === 'full') style += ' width:100%;';
-      else if (option.startsWith('width:')) style += ` width:${option.split(':')[1]};`;
-    }
-    return `<img src="${url}" style="${style}" alt="이미지">`;
-  });
-
-  return text;
-}
   
 // ===== 자동 저장 =====
 let autoSaveTimer = null;
@@ -1021,100 +998,12 @@ function renderWiki(content, title) {
   
   let footnotes = [];
   
-  // 1. 접기/펼치기 박스 미리 처리
-  content = content.replace(/\{\{\{ ([^\n]+)\n([\s\S]*?)\n\}\}\}/g, function(match, foldTitle, foldContent) {
-    return `<div class="fold-box"><div class="fold-title">${foldTitle}</div><div class="fold-content">${foldContent}</div></div>`;
-  });
-
-  // 2. [★핵심] 각주 추출 및 parseInline 적용 (각주 안에서도 사진, 글씨 꾸미기 작동!)
   content = content.replace(/\[\[각주:(.+?)\]\]/g, function(match, noteText) {
-    let formattedNote = parseInline(noteText); 
-    footnotes.push(formattedNote);
+    footnotes.push(noteText); // <- 이 부분을 고쳐야 합니다.
     let fnNum = footnotes.length;
-    return `<a class="footnote-ref" data-note="${fnNum}">[${fnNum}]</a>`;
+    return `<a class="footnote-ref"...`;
   });
-
-  // 3. 본문 인라인 문법 적용 (굵게, 기울임, 취소선, 색상, 이미지)
-  content = parseInline(content);
-
-  // 4. 링크 처리 (외부 링크 및 내부 링크)
-  content = content.replace(/\[(https?:\/\/[^\s]+) ([^\]]+)\]/g, '<a href="$1" target="_blank" class="wiki-link">$2</a>');
-  content = content.replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, function(match, docName, viewText) {
-    return `<a class="wiki-link" onclick="editPerson('${docName.replace(/'/g, "\\'")}')">${viewText}</a>`;
-  });
-  content = content.replace(/\[\[([^\]]+)\]\]/g, function(match, docName) {
-    return `<a class="wiki-link" onclick="editPerson('${docName.replace(/'/g, "\\'")}')">${docName}</a>`;
-  });
-
-  // 5. 블록 문법 처리 (줄바꿈, 제목, 목록, 표)
-  let lines = content.split('\n');
-  let result = [];
-  let inTable = false;
-  let tableHtml = '';
-
-  lines.forEach(line => {
-    if (line.trim() === '----') {
-      result.push('<hr>');
-      return;
-    }
-    if (line.startsWith('=== ') && line.endsWith(' ===')) {
-      result.push(`<h3>${line.slice(4, -4)}</h3>`);
-      return;
-    }
-    if (line.startsWith('== ') && line.endsWith(' ==')) {
-      result.push(`<h2>${line.slice(3, -3)}</h2>`);
-      return;
-    }
-    if (line.startsWith('> ')) {
-      result.push(`<blockquote>${line.slice(2)}</blockquote>`);
-      return;
-    }
-    if (line.startsWith('* ')) {
-      result.push(`<ul><li>${line.slice(2)}</li></ul>`);
-      return;
-    }
-    if (/^\d+\.\s/.test(line)) {
-      let match = line.match(/^(\d+)\.\s(.*)/);
-      result.push(`<ol start="${match[1]}"><li>${match[2]}</li></ol>`);
-      return;
-    }
-    if (line.startsWith('|') && line.endsWith('|')) {
-      if (!inTable) {
-        inTable = true;
-        tableHtml = '<table>';
-      }
-      let cells = line.split('|').slice(1, -1);
-      tableHtml += '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>';
-      return;
-    } else {
-      if (inTable) {
-        inTable = false;
-        tableHtml += '</table>';
-        result.push(tableHtml);
-      }
-    }
-    result.push(line + '<br>');
-  });
-
-  if (inTable) {
-    tableHtml += '</table>';
-    result.push(tableHtml);
-  }
-
-  content = result.join('\n');
-  content = content.replace(/<\/ul>\n<ul>/g, '').replace(/<\/ol>\n<ol[^>]*>/g, '');
-
-  // 6. 문서 맨 아래 각주 리스트 출력
-  if (footnotes.length > 0) {
-    content += '<div class="footnote-list">';
-    footnotes.forEach((note, i) => {
-      content += `<div id="fn${i+1}"><a href="#none" style="color:var(--link); margin-right:6px;">[${i+1}]</a> ${note}</div>`;
-    });
-    content += '</div>';
-  }
-
-  return content;
-}
+  
   // 색상
   html = html.replace(/\[\[색상:([^\]]+)\]\](.*?)\[\[\/색상\]\]/gs, '<span style="color:$1;">$2</span>');
 
