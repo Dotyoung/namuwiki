@@ -1099,6 +1099,8 @@ function renderWiki(content, title) {
   // 줄바꿈
   //얍!
   html = html.replace(/<\/li>\n<li>/g, '</li><li>');
+  // 목록 태그(<ul>, </ul>, <li>, </li>) 앞뒤의 줄바꿈(\n)은 <br>로 바뀌지 않도록 제거
+  html = html.replace(/\n?(<\/?ul>|<\/?li>)\n?/g, '$1'); 
   html = html.replace(/\n/g, '<br>');
   
   // 각주 목록
