@@ -1003,7 +1003,6 @@ function renderWiki(content, title) {
   
   let footnotes = [];
   
-  // content를 기반으로 html 변수를 생성하고 선언(let)해줍니다.
   let html = content.replace(/\[\[각주:(.+?)\]\]/g, function(match, noteText) {
     footnotes.push(noteText);
     let fnNum = footnotes.length;
